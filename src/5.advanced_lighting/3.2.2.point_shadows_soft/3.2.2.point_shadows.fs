@@ -16,6 +16,7 @@ struct Light {
 
 uniform sampler2D diffuseTexture;
 uniform samplerCube depthMap;
+uniform samplerCube positionMap;
 
 uniform Light light;
 uniform vec3 viewPos;
