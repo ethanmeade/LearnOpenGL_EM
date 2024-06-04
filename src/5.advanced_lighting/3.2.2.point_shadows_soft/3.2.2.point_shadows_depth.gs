@@ -4,6 +4,8 @@ layout (triangle_strip, max_vertices=18) out;
 
 uniform mat4 shadowMatrices[6];
 
+// in vec3 gsNormal; // Just toss normal through and pass it to fragment Shader
+// out vec3 Normal;
 out vec4 FragPos; // FragPos from GS (output per emitvertex)
 
 void main()
@@ -19,4 +21,5 @@ void main()
         }    
         EndPrimitive();
     }
+    // Normal = gsNormal;
 } 

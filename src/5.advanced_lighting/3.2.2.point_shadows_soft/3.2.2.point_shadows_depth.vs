@@ -6,7 +6,7 @@ layout (location = 2) in vec2 aTexCoords;
 uniform mat4 model;
 
 //out vec2 TexCoords;
-// out vec3 Normal;
+// out vec3 gsNormal;
 
 void main()
 {
@@ -16,5 +16,5 @@ void main()
     // TexCoords = aTexCoords;
     
     // mat3 normalMatrix = transpose(inverse(mat3(model)));
-    // Normal = normalMatrix * aNormal;
+    // gsNormal = normalMatrix * aNormal;
 }
