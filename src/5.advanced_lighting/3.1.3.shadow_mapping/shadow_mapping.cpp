@@ -163,7 +163,7 @@ int main()
     // -------------
     glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
     // glm::vec3 lightPos(camera.Position);
-    glm::vec3 lightDir(lightPos - camera.Position);
+    glm::vec3 lightDir(camera.Position - lightPos);
 
     int wid, hei;
     glfwGetFramebufferSize(window, &wid, &hei);
@@ -232,7 +232,11 @@ int main()
         shader.setMat4("view", view);
         // set light uniforms
         shader.setVec3("viewPos", camera.Position);
-        shader.setVec3("lightPos", lightPos);
+        // set lighting uniforms
+        shader.setVec3("light.position", lightPos);
+        shader.setVec3("light.direction", lightDir);
+        shader.setFloat("light.cutOff", glm::cos(glm::radians(12.5f)));
+        shader.setFloat("light.outerCutOff", glm::cos(glm::radians(22.5f)));
         shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
         shader.setFloat("far_plane", far_plane);
         shader.setInt("shadows", shadows); // enable/disable shadows by pressing 'SPACE'
