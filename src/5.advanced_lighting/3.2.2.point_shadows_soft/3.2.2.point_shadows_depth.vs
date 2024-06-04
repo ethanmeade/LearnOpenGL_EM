@@ -5,10 +5,16 @@ layout (location = 2) in vec2 aTexCoords;
 
 uniform mat4 model;
 
+//out vec2 TexCoords;
+// out vec3 Normal;
+
 void main()
 {
     vec4 worldPos = model * vec4(aPos, 1.0);
     gl_Position = worldPos;
 
+    // TexCoords = aTexCoords;
     
+    // mat3 normalMatrix = transpose(inverse(mat3(model)));
+    // Normal = normalMatrix * aNormal;
 }
