@@ -231,7 +231,7 @@ int main()
         // --------------------------------------------------------------
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
-        float near_plane = 1.0f, far_plane = 22.5f;
+        float near_plane = 1.0f, far_plane = 32.5f;
         lightProjection = glm::perspective(glm::radians(87.5f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
         // lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
         lightView = glm::lookAt(lightPos, glm::normalize(lightDir), glm::vec3(0.0, 1.0, 0.0));
@@ -242,10 +242,19 @@ int main()
 
         glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
         glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-            glClear(GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, woodTexture);
-            renderScene(simpleDepthShader, -1);
+            renderScene(simpleDepthShader, 1);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, greenTexture);
+            renderScene(simpleDepthShader, 2);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, brickTexture);
+            renderScene(simpleDepthShader, 3);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, concreteTexture);
+            renderScene(simpleDepthShader, 4);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // reset viewport
