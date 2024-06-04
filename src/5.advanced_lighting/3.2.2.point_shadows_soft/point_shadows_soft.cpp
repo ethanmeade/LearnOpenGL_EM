@@ -93,7 +93,7 @@ int main()
     // load textures
     // -------------
     unsigned int woodTexture = loadTexture(FileSystem::getPath("resources/textures/wood.png").c_str());
-    unsigned int marbleTexture = loadTexture(FileSystem::getPath("resources/textures/greenwood.png").c_str());
+    unsigned int greenTexture = loadTexture(FileSystem::getPath("resources/textures/greenwood.png").c_str());
     unsigned int brickTexture = loadTexture(FileSystem::getPath("resources/textures/bricks2_red.jpg").c_str());
 
     // configure depth map FBO
@@ -214,7 +214,7 @@ int main()
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
         renderScene(shader, 1);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, marbleTexture);
+        glBindTexture(GL_TEXTURE_2D, greenTexture);
         renderScene(shader, 2);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, brickTexture);

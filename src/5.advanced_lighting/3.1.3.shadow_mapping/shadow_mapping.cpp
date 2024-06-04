@@ -18,13 +18,19 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path);
-void renderScene(const Shader &shader);
+void renderScene(const Shader &shader, int option);
 void renderCube();
 void renderQuad();
 
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+bool shadows = true;
+bool shadowsKeyPressed = false;
+bool lightFollowsCamera = false;
+bool lightKeyPressed = false;
+bool debugShadows = false;
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
@@ -117,6 +123,9 @@ int main()
     // load textures
     // -------------
     unsigned int woodTexture = loadTexture(FileSystem::getPath("resources/textures/wood.png").c_str());
+    unsigned int greenTexture = loadTexture(FileSystem::getPath("resources/textures/greenwood.png").c_str());
+    unsigned int brickTexture = loadTexture(FileSystem::getPath("resources/textures/bricks2_red.jpg").c_str());
+    unsigned int concreteTexture = loadTexture(FileSystem::getPath("resources/textures/concreteTexture.png").c_str());
 
     // configure depth map FBO
     // -----------------------
@@ -153,6 +162,11 @@ int main()
     // lighting info
     // -------------
     glm::vec3 lightPos(-2.0f, 4.0f, -1.0f);
+    // glm::vec3 lightPos(camera.Position);
+    glm::vec3 lightDir(lightPos - camera.Position);
+
+    int wid, hei;
+    glfwGetFramebufferSize(window, &wid, &hei);
 
     // render loop
     // -----------
@@ -173,6 +187,12 @@ int main()
         //lightPos.z = cos(glfwGetTime()) * 2.0f;
         //lightPos.y = 5.0 + cos(glfwGetTime()) * 1.0f;
 
+        if (lightFollowsCamera) {
+            lightPos = camera.Position;
+            lightDir = camera.Front;
+            // lightView = camera.GetViewMatrix();
+        }
+
         // render
         // ------
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -182,10 +202,10 @@ int main()
         // --------------------------------------------------------------
         glm::mat4 lightProjection, lightView;
         glm::mat4 lightSpaceMatrix;
-        float near_plane = 1.0f, far_plane = 7.5f;
-        //lightProjection = glm::perspective(glm::radians(45.0f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
-        lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-        lightView = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0, 1.0, 0.0));
+        float near_plane = 1.0f, far_plane = 22.5f;
+        lightProjection = glm::perspective(glm::radians(87.5f), (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT, near_plane, far_plane); // note that if you use a perspective projection matrix you'll have to change the light position as the current light position isn't enough to reflect the whole scene
+        // lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+        lightView = glm::lookAt(lightPos, glm::normalize(lightDir), glm::vec3(0.0, 1.0, 0.0));
         lightSpaceMatrix = lightProjection * lightView;
         // render scene from light's point of view
         simpleDepthShader.use();
@@ -196,11 +216,11 @@ int main()
             glClear(GL_DEPTH_BUFFER_BIT);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, woodTexture);
-            renderScene(simpleDepthShader);
+            renderScene(simpleDepthShader, -1);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         // reset viewport
-        glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        glViewport(0, 0, wid, hei);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // 2. render scene as normal using the generated depth/shadow map  
@@ -214,11 +234,22 @@ int main()
         shader.setVec3("viewPos", camera.Position);
         shader.setVec3("lightPos", lightPos);
         shader.setMat4("lightSpaceMatrix", lightSpaceMatrix);
+        shader.setFloat("far_plane", far_plane);
+        shader.setInt("shadows", shadows); // enable/disable shadows by pressing 'SPACE'
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, woodTexture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, depthMap);
-        renderScene(shader);
+        renderScene(shader, 1);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, greenTexture);
+        renderScene(shader, 2);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, brickTexture);
+        renderScene(shader, 3);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, concreteTexture);
+        renderScene(shader, 4);
 
         // render Depth map to quad for visual debugging
         // ---------------------------------------------
@@ -246,30 +277,53 @@ int main()
 
 // renders the 3D scene
 // --------------------
-void renderScene(const Shader &shader)
+void renderScene(const Shader &shader, int option)
 {
-    // floor
     glm::mat4 model = glm::mat4(1.0f);
-    shader.setMat4("model", model);
-    glBindVertexArray(planeVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    if (option == -1 || option == 1) {
+        // floor
+        shader.setMat4("model", model);
+        glBindVertexArray(planeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+    }
     // cubes
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
-    model = glm::scale(model, glm::vec3(0.5f));
-    shader.setMat4("model", model);
-    renderCube();
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
-    model = glm::scale(model, glm::vec3(0.5f));
-    shader.setMat4("model", model);
-    renderCube();
-    model = glm::mat4(1.0f);
-    model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 2.0));
-    model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
-    model = glm::scale(model, glm::vec3(0.25));
-    shader.setMat4("model", model);
-    renderCube();
+    if (option == -1 || option == 2) {
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
+        model = glm::scale(model, glm::vec3(0.5f));
+        shader.setMat4("model", model);
+        renderCube();
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(2.0f, 0.0f, 1.0));
+        model = glm::scale(model, glm::vec3(0.5f));
+        shader.setMat4("model", model);
+        renderCube();
+    }
+    if (option == -1 || option == 3) {
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 2.0));
+        model = glm::rotate(model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+        model = glm::scale(model, glm::vec3(0.25));
+        shader.setMat4("model", model);
+        renderCube();
+    }
+    if (option == -1 || option == 4) {
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.3, 1.5f, 3.5));
+        model = glm::scale(model, glm::vec3(3.0f, 2.0f, 0.1f));
+        shader.setMat4("model", model);
+        renderCube();
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(3.3, 1.5f, 0.0));
+        model = glm::scale(model, glm::vec3(0.1f, 2.0f, 3.45f));
+        shader.setMat4("model", model);
+        renderCube();
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-2.75, 1.5f, 0.0));
+        model = glm::scale(model, glm::vec3(0.1f, 2.0f, 3.45f));
+        shader.setMat4("model", model);
+        renderCube();
+    }
 }
 
 
@@ -394,6 +448,25 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+    
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS && !shadowsKeyPressed)
+    {
+        shadows = !shadows;
+        shadowsKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_RELEASE)
+    {
+        shadowsKeyPressed = false;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !lightKeyPressed)
+    {
+        lightFollowsCamera = !lightFollowsCamera;
+        lightKeyPressed = true;
+    }
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE)
+    {
+        lightKeyPressed = false;
+    }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
