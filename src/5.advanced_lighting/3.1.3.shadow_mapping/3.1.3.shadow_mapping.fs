@@ -11,6 +11,8 @@ in VS_OUT {
 uniform sampler2D diffuseTexture;
 uniform sampler2D shadowMap;
 uniform sampler2D gPosition;
+uniform sampler2D gNormal;
+uniform sampler2D gAlbedoSpec;
 
 struct Light {
     vec3 position;  
@@ -104,7 +106,9 @@ float ShadowCalculation(vec4 fragPosLightSpace)
 
 void main()
 {           
-    vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
+    // vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb;
+    // vec3 color = texture(gPosition, fs_in.TexCoords).rgb;
+    vec3 color = texture(gAlbedoSpec, fs_in.TexCoords).rgb;
     vec3 normal = normalize(fs_in.Normal);
     vec3 lightColor = vec3(0.7);
     // ambient
@@ -140,6 +144,7 @@ void main()
                            
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
     // vec3 lighting = vec3(texture(gPosition, fs_in.FragPos.xy));
+    // vec3 lighting = vec3(texture(gNormal, fs_in.TexCoords));
     
     FragColor = vec4(lighting, 1.0);
 }
