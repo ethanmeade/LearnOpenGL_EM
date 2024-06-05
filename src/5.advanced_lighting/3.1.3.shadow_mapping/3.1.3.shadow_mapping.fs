@@ -10,6 +10,7 @@ in VS_OUT {
 
 uniform sampler2D diffuseTexture;
 uniform sampler2D shadowMap;
+uniform sampler2D gPosition;
 
 struct Light {
     vec3 position;  
@@ -107,7 +108,7 @@ void main()
     vec3 normal = normalize(fs_in.Normal);
     vec3 lightColor = vec3(0.7);
     // ambient
-    vec3 ambient = 0.15 * lightColor;
+    vec3 ambient = 0.09 * lightColor;
     // diffuse
     vec3 lightDir = normalize(light.position - fs_in.FragPos);
     float diff = max(dot(lightDir, normal), 0.0);
@@ -138,6 +139,7 @@ void main()
     // float shadow = shadows ? ShadowCalculation(fs_in.FragPos) : 0.0;
                            
     vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
+    // vec3 lighting = vec3(texture(gPosition, fs_in.FragPos.xy));
     
     FragColor = vec4(lighting, 1.0);
 }
